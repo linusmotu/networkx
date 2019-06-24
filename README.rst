@@ -1,3 +1,6 @@
+This fork is specifically for use with the custom [Anomaly detection security](https://github.com/linusmotu/anomaly-detection-security) fork of Mike's [original code](https://github.com/mpwilbur/anomaly-detection-security
+).
+
 NetworkX
 ========
 
