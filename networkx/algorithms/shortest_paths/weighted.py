@@ -9,33 +9,31 @@ import networkx as nx
 from networkx.utils import generate_unique_node
 from networkx.algorithms.shortest_paths.generic import _build_paths_from_predecessors
 
-
-__all__ = [
-    "dijkstra_path",
-    "dijkstra_path_length",
-    "bidirectional_dijkstra",
-    "single_source_dijkstra",
-    "single_source_dijkstra_path",
-    "single_source_dijkstra_path_length",
-    "multi_source_dijkstra",
-    "multi_source_dijkstra_path",
-    "multi_source_dijkstra_path_length",
-    "all_pairs_dijkstra",
-    "all_pairs_dijkstra_path",
-    "all_pairs_dijkstra_path_length",
-    "dijkstra_predecessor_and_distance",
-    "bellman_ford_path",
-    "bellman_ford_path_length",
-    "single_source_bellman_ford",
-    "single_source_bellman_ford_path",
-    "single_source_bellman_ford_path_length",
-    "all_pairs_bellman_ford_path",
-    "all_pairs_bellman_ford_path_length",
-    "bellman_ford_predecessor_and_distance",
-    "negative_edge_cycle",
-    "goldberg_radzik",
-    "johnson",
-]
+__all__ = ['dijkstra_path',
+           'dijkstra_path_timed',
+           'dijkstra_path_length',
+           'bidirectional_dijkstra',
+           'single_source_dijkstra',
+           'single_source_dijkstra_path',
+           'single_source_dijkstra_path_length',
+           'multi_source_dijkstra',
+           'multi_source_dijkstra_path',
+           'multi_source_dijkstra_path_length',
+           'all_pairs_dijkstra',
+           'all_pairs_dijkstra_path',
+           'all_pairs_dijkstra_path_length',
+           'dijkstra_predecessor_and_distance',
+           'bellman_ford_path',
+           'bellman_ford_path_length',
+           'single_source_bellman_ford',
+           'single_source_bellman_ford_path',
+           'single_source_bellman_ford_path_length',
+           'all_pairs_bellman_ford_path',
+           'all_pairs_bellman_ford_path_length',
+           'bellman_ford_predecessor_and_distance',
+           'negative_edge_cycle',
+           'goldberg_radzik',
+           'johnson']
 
 
 def _weight_function(G, weight):
@@ -157,6 +155,197 @@ def dijkstra_path(G, source, target, weight="weight"):
     (length, path) = single_source_dijkstra(G, source, target=target, weight=weight)
     return path
 
+def dijkstra_path_timed(G, source, target, weight='weight', rsu_hash=None, time_window=11):
+    # print("dijkstra_path_timed({}), edited by JP".format(time_window))
+    """Returns the shortest weighted path from source to target in G.
+
+    Uses Dijkstra's Method to compute the shortest weighted path
+    between two nodes in a graph.
+
+    Parameters
+    ----------
+    G : NetworkX graph
+
+    source : node
+       Starting node
+
+    target : node
+       Ending node
+
+    weight : string or function
+       If this is a string, then edge weights will be accessed via the
+       edge attribute with this key (that is, the weight of the edge
+       joining `u` to `v` will be ``G.edges[u, v][weight]``). If no
+       such edge attribute exists, the weight of the edge is assumed to
+       be one.
+
+       If this is a function, the weight of an edge is the value
+       returned by the function. The function must accept exactly three
+       positional arguments: the two endpoints of an edge and the
+       dictionary of edge attributes for that edge. The function must
+       return a number.
+
+    Returns
+    -------
+    path : list
+       List of nodes in a shortest path.
+
+    Raises
+    ------
+    NodeNotFound
+        If `source` is not in `G`.
+
+    NetworkXNoPath
+       If no path exists between source and target.
+
+    Examples
+    --------
+    >>> G=nx.path_graph(5)
+    >>> print(nx.dijkstra_path(G,0,4))
+    [0, 1, 2, 3, 4]
+
+    Notes
+    -----
+    Edge weight attributes must be numerical.
+    Distances are calculated as sums of weighted edges traversed.
+
+    The weight function can be used to hide edges by returning None.
+    So ``weight = lambda u, v, d: 1 if d['color']=="red" else None``
+    will find the shortest red path.
+
+    The weight function can be used to include node weights.
+
+    >>> def func(u, v, d):
+    ...     node_u_wt = G.nodes[u].get('node_weight', 1)
+    ...     node_v_wt = G.nodes[v].get('node_weight', 1)
+    ...     edge_wt = d.get('weight', 1)
+    ...     return node_u_wt/2 + node_v_wt/2 + edge_wt
+
+    In this example we take the average of start and end node
+    weights of an edge and add it to the weight of the edge.
+
+    See Also
+    --------
+    bidirectional_dijkstra(), bellman_ford_path()
+    """
+    sources = {source}
+
+    if not sources:
+        raise ValueError('sources must not be empty')
+    if target in sources:
+        return (0, [target])
+    weight = _weight_function(G, weight)
+    paths = {source: [source] for source in sources}  # dictionary of paths
+    dist = _dijkstra_multisource_timed(G, sources, weight, paths=paths,
+                                 cutoff=None, target=target, rsu_hash=rsu_hash, time_window=time_window)
+    if target is None:
+        (length, path) = (dist, paths)
+    try:
+        (length, path) = (dist[target], paths[target])
+    except KeyError:
+        raise nx.NetworkXNoPath("No path to {}.".format(target))
+
+    return path
+
+def _dijkstra_multisource_timed(G, sources, weight, pred=None, paths=None,
+                          cutoff=None, target=None, rsu_hash=None, time_window=11):
+    """Uses Dijkstra's algorithm to find shortest weighted paths
+
+    Parameters
+    ----------
+    G : NetworkX graph
+
+    sources : non-empty iterable of nodes
+        Starting nodes for paths. If this is just an iterable containing
+        a single node, then all paths computed by this function will
+        start from that node. If there are two or more nodes in this
+        iterable, the computed paths may begin from any one of the start
+        nodes.
+
+    weight: function
+        Function with (u, v, data) input that returns that edges weight
+
+    pred: dict of lists, optional(default=None)
+        dict to store a list of predecessors keyed by that node
+        If None, predecessors are not stored.
+
+    paths: dict, optional (default=None)
+        dict to store the path list from source to each node, keyed by node.
+        If None, paths are not stored.
+
+    target : node label, optional
+        Ending node for path. Search is halted when target is found.
+
+    cutoff : integer or float, optional
+        Depth to stop the search. Only return paths with length <= cutoff.
+
+    Returns
+    -------
+    distance : dictionary
+        A mapping from node to shortest distance to that node from one
+        of the source nodes.
+
+    Raises
+    ------
+    NodeNotFound
+        If any of `sources` is not in `G`.
+
+    Notes
+    -----
+    The optional predecessor and path dictionaries can be accessed by
+    the caller through the original pred and paths objects passed
+    as arguments. No need to explicitly return pred or paths.
+
+    """
+    # print("_dijkstra_multisource_timed({}), edited by JP.".format(time_window))
+    G_succ = G._succ if G.is_directed() else G._adj
+
+    push = heappush
+    pop = heappop
+    dist = {}  # dictionary of final distances
+    seen = {}
+    # fringe is heapq with 3-tuples (distance,c,node)
+    # use the count c to avoid comparing nodes (may not be able to)
+    c = count()
+    fringe = []
+    for source in sources:
+        if source not in G:
+            raise nx.NodeNotFound("Source {} not in G".format(source))
+        seen[source] = 0
+        push(fringe, (0, next(c), source))
+    while fringe:
+        (d, _, v) = pop(fringe)
+        if v in dist:
+            continue  # already searched this node.
+        dist[v] = d
+        if v == target:
+            break
+        for u, e in G_succ[v].items():
+            cost = weight(v, u, e, rsu_hash, time_window)
+            if cost is None:
+                continue
+            vu_dist = dist[v] + cost
+            if cutoff is not None:
+                if vu_dist > cutoff:
+                    continue
+            if u in dist:
+                if vu_dist < dist[u]:
+                    raise ValueError('Contradictory paths found:',
+                                     'negative weights?')
+            elif u not in seen or vu_dist < seen[u]:
+                seen[u] = vu_dist
+                push(fringe, (vu_dist, next(c), u))
+                if paths is not None:
+                    paths[u] = paths[v] + [u]
+                if pred is not None:
+                    pred[u] = [v]
+            elif vu_dist == seen[u]:
+                if pred is not None:
+                    pred[u].append(v)
+
+    # The optional predecessor and path dictionaries can be accessed
+    # by the caller via the pred and paths objects passed as arguments.
+    return dist
 
 def dijkstra_path_length(G, source, target, weight="weight"):
     """Returns the shortest weighted path length in G from source to target.
@@ -743,10 +932,8 @@ def _dijkstra(G, source, weight, pred=None, paths=None, cutoff=None, target=None
         G, [source], weight, pred=pred, paths=paths, cutoff=cutoff, target=target
     )
 
-
-def _dijkstra_multisource(
-    G, sources, weight, pred=None, paths=None, cutoff=None, target=None
-):
+def _dijkstra_multisource(G, sources, weight, pred=None, paths=None,
+                          cutoff=None, target=None):
     """Uses Dijkstra's algorithm to find shortest weighted paths
 
     Parameters
