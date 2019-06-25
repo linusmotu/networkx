@@ -166,7 +166,7 @@ def dijkstra_path(G, source, target, weight='weight'):
     return path
 
 def dijkstra_path_timed(G, source, target, weight='weight', rsu_hash=None, time_window=11):
-    print("dijkstra_path_timed({}), edited by JP".format(time_window))
+    # print("dijkstra_path_timed({}), edited by JP".format(time_window))
     """Returns the shortest weighted path from source to target in G.
 
     Uses Dijkstra's Method to compute the shortest weighted path
@@ -307,7 +307,7 @@ def _dijkstra_multisource_timed(G, sources, weight, pred=None, paths=None,
     as arguments. No need to explicitly return pred or paths.
 
     """
-    print("_dijkstra_multisource_timed({}), edited by JP.".format(time_window))
+    # print("_dijkstra_multisource_timed({}), edited by JP.".format(time_window))
     G_succ = G._succ if G.is_directed() else G._adj
 
     push = heappush
