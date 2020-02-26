@@ -245,7 +245,7 @@ def dijkstra_path_timed(G, source, target, weight='weight', rsu_hash=None, time_
     except KeyError:
         raise nx.NetworkXNoPath("No path to {}.".format(target))
 
-    return path
+    return (length, path)
 
 def _dijkstra_multisource_timed(G, sources, weight, pred=None, paths=None,
                           cutoff=None, target=None, rsu_hash=None, time_window=11):
