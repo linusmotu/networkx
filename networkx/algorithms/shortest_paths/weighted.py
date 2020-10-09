@@ -9,31 +9,34 @@ import networkx as nx
 from networkx.utils import generate_unique_node
 from networkx.algorithms.shortest_paths.generic import _build_paths_from_predecessors
 
-__all__ = ['dijkstra_path',
-           'dijkstra_path_timed',
-           'dijkstra_path_length',
-           'bidirectional_dijkstra',
-           'single_source_dijkstra',
-           'single_source_dijkstra_path',
-           'single_source_dijkstra_path_length',
-           'multi_source_dijkstra',
-           'multi_source_dijkstra_path',
-           'multi_source_dijkstra_path_length',
-           'all_pairs_dijkstra',
-           'all_pairs_dijkstra_path',
-           'all_pairs_dijkstra_path_length',
-           'dijkstra_predecessor_and_distance',
-           'bellman_ford_path',
-           'bellman_ford_path_length',
-           'single_source_bellman_ford',
-           'single_source_bellman_ford_path',
-           'single_source_bellman_ford_path_length',
-           'all_pairs_bellman_ford_path',
-           'all_pairs_bellman_ford_path_length',
-           'bellman_ford_predecessor_and_distance',
-           'negative_edge_cycle',
-           'goldberg_radzik',
-           'johnson']
+
+__all__ = [
+    "dijkstra_path",
+    "dijkstra_path_timed",
+    "dijkstra_path_length",
+    "bidirectional_dijkstra",
+    "single_source_dijkstra",
+    "single_source_dijkstra_path",
+    "single_source_dijkstra_path_length",
+    "multi_source_dijkstra",
+    "multi_source_dijkstra_path",
+    "multi_source_dijkstra_path_length",
+    "all_pairs_dijkstra",
+    "all_pairs_dijkstra_path",
+    "all_pairs_dijkstra_path_length",
+    "dijkstra_predecessor_and_distance",
+    "bellman_ford_path",
+    "bellman_ford_path_length",
+    "single_source_bellman_ford",
+    "single_source_bellman_ford_path",
+    "single_source_bellman_ford_path_length",
+    "all_pairs_bellman_ford_path",
+    "all_pairs_bellman_ford_path_length",
+    "bellman_ford_predecessor_and_distance",
+    "negative_edge_cycle",
+    "goldberg_radzik",
+    "johnson",
+]
 
 
 def _weight_function(G, weight):
@@ -155,7 +158,7 @@ def dijkstra_path(G, source, target, weight="weight"):
     (length, path) = single_source_dijkstra(G, source, target=target, weight=weight)
     return path
 
-def dijkstra_path_timed(G, source, target, weight='weight', rsu_hash=None, time_window=11):
+def dijkstra_path_timed(G, source, target, weight="weight", rsu_hash=None, time_window=11):
     # print("dijkstra_path_timed({}), edited by JP".format(time_window))
     """Returns the shortest weighted path from source to target in G.
 
@@ -346,7 +349,6 @@ def _dijkstra_multisource_timed(G, sources, weight, pred=None, paths=None,
     # The optional predecessor and path dictionaries can be accessed
     # by the caller via the pred and paths objects passed as arguments.
     return dist
-
 def dijkstra_path_length(G, source, target, weight="weight"):
     """Returns the shortest weighted path length in G from source to target.
 
@@ -932,8 +934,10 @@ def _dijkstra(G, source, weight, pred=None, paths=None, cutoff=None, target=None
         G, [source], weight, pred=pred, paths=paths, cutoff=cutoff, target=target
     )
 
-def _dijkstra_multisource(G, sources, weight, pred=None, paths=None,
-                          cutoff=None, target=None):
+
+def _dijkstra_multisource(
+    G, sources, weight, pred=None, paths=None, cutoff=None, target=None
+):
     """Uses Dijkstra's algorithm to find shortest weighted paths
 
     Parameters
@@ -1807,7 +1811,7 @@ def single_source_bellman_ford(G, source, target=None, weight="weight"):
 
 
 def all_pairs_bellman_ford_path_length(G, weight="weight"):
-    """Compute shortest path lengths between all nodes in a weighted graph.
+    """ Compute shortest path lengths between all nodes in a weighted graph.
 
     Parameters
     ----------
@@ -1851,7 +1855,7 @@ def all_pairs_bellman_ford_path_length(G, weight="weight"):
 
 
 def all_pairs_bellman_ford_path(G, weight="weight"):
-    """Compute shortest paths between all nodes in a weighted graph.
+    """ Compute shortest paths between all nodes in a weighted graph.
 
     Parameters
     ----------
@@ -2040,7 +2044,8 @@ def goldberg_radzik(G, source, weight="weight"):
         return to_scan
 
     def relax(to_scan):
-        """Relax out-edges of relabeled nodes."""
+        """Relax out-edges of relabeled nodes.
+        """
         relabeled = set()
         # Scan nodes in to_scan in topological order and relax incident
         # out-edges. Add the relabled nodes to labeled.
